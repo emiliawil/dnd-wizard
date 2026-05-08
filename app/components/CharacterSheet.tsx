@@ -11,7 +11,11 @@ function CharacterSheet({ characterData }: { characterData: Character }) {
   return (
     <>
       <h2>{characterData.name}</h2>
-      <p>Class: {characterData.class}</p>
+      <p>
+        Class: {characterData.class}
+        {characterData.buildName !== characterData.class &&
+          ` (${characterData.buildName})`}
+      </p>
       <p>Level: {characterData.level}</p>
       <p>Species: {characterData.species}</p>
       <p>Background: {characterData.background}</p>

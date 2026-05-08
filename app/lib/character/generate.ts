@@ -1,13 +1,14 @@
 import { pickRandom, rollDie } from "../random";
 import {
-  ATTRIBUTE_KEYS,
   BACKGROUNDS,
   CLASSES,
+  CLASS_BUILDS,
   FIRST_NAMES,
   LAST_NAMES,
   SPECIES,
 } from "./data";
 import type {
+  AttributeKey,
   Background,
   Character,
   CharacterAttributes,
@@ -16,13 +17,17 @@ import type {
 } from "./types";
 
 export function generateCharacter(): Character {
+  const characterClass = generateCharacterClass();
+  const build = pickRandom(CLASS_BUILDS[characterClass]);
+  const rolls = rollStats();
   return {
     name: generateCharacterName(),
-    class: generateCharacterClass(),
+    class: characterClass,
+    buildName: build.name,
     level: 1,
     species: generateSpecies(),
     background: generateBackground(),
-    stats: generateCharacterAttributes(),
+    stats: assignStats(rolls, build.priority),
   };
 }
 
@@ -42,34 +47,28 @@ export function generateBackground(): Background {
   return pickRandom(BACKGROUNDS);
 }
 
-export function generateCharacterAttributes(): CharacterAttributes {
-  const stats = {} as CharacterAttributes;
-  for (const key of ATTRIBUTE_KEYS) {
+export function rollStats(): number[] {
+  const stats: number[] = [];
+  for (let i = 0; i < 6; i++) {
     const rolls = [rollDie(6), rollDie(6), rollDie(6), rollDie(6)];
     rolls.sort((a, b) => b - a);
-    stats[key] = rolls[0] + rolls[1] + rolls[2];
+    stats.push(rolls[0] + rolls[1] + rolls[2]);
   }
+  return stats;
+}
+
+export function assignStats(
+  rolls: number[],
+  priority: AttributeKey[],
+): CharacterAttributes {
+  const sorted = [...rolls].sort((a, b) => b - a);
+  const stats = {} as CharacterAttributes;
+  priority.forEach((key, i) => {
+    stats[key] = sorted[i];
+  });
   return stats;
 }
 
 export function getAttributeModifier(score: number): number {
   return Math.floor((score - 10) / 2);
 }
-
-/* Order of importance for stats for each class in D&D 5e:
-
-- Artificer: INT, CON, DEX, WIS, CHA, STR
-- Barbarian: STR, CON, DEX, WIS, CHA, INT
-- Bard: CHA, DEX, CON, WIS, INT, STR
-- Cleric: WIS, CON, STR, DEX, CHA, INT
-- Druid: WIS, CON, DEX, STR, CHA, INT
-- Fighter: STR or DEX (depending on fighting style), CON, WIS, CHA, INT
-- Monk: DEX, WIS, CON, STR, CHA, INT
-- Paladin: STR or CHA (depending on playstyle), CON, CHA or STR (depending on playstyle), WIS, DEX, INT
-- Ranger: DEX or STR (depending on fighting style), CON, WIS, CHA, INT
-- Rogue: DEX, INT or CHA (depending on playstyle), CON, WIS, CHA or INT (depending on playstyle), STR
-- Sorcerer: CHA, CON, DEX, WIS, INT, STR
-- Warlock: CHA, CON, DEX, WIS, INT, STR
-- Wizard: INT, DEX, CON, WIS, CHA, STR
-
-*/
